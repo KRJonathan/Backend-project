@@ -1,0 +1,27 @@
+@router.get("/", summary="Метод get()",
+            description="<h2>Просмотр элемента</h2>")
+async def get_hotels(
+        pagination: PaginationDep,
+        id: int | None = Query(None, description="Айдишник"),
+        # Это все query параметр, параметры запроса. id, title and name.
+        title: str | None = Query(None, description="Название отеля"),
+        location: str | None = Query(None, description="Расположение отеля"),
+):
+    per_page = pagination.per_page or 5
+    async with async_session_maker() as session:
+        query = select(HotelsOrm)
+        if title:
+            query = query.filter_by(title=title)
+        if location:
+            query = query.filter_by(location=location)
+        query = (
+            query
+            .limit(per_page)
+            .offset(per_page * (pagination.page - 1))
+        )
+        result = await session.execute(query)
+        # print(type(result), result)
+
+        hotels = result.scalars().all()
+        # print(type(hotels), hotels)
+        return hotels
